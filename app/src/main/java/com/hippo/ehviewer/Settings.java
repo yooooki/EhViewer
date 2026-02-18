@@ -58,7 +58,7 @@ public class Settings {
         // Enable builtin hosts if the country is CN
         if (!sSettingsPre.contains(KEY_BUILT_IN_HOSTS)) {
             if ("CN".equals(Locale.getDefault().getCountry())) {
-                putBuiltInHosts(true);
+                putBuiltInHosts(false);
             }
         }
     }

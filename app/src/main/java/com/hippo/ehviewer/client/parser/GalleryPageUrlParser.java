@@ -16,6 +16,8 @@
 
 package com.hippo.ehviewer.client.parser;
 
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.client.EhUrl;
 import com.hippo.yorozuya.NumberUtils;

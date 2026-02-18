@@ -943,6 +943,7 @@ public class EhEngine {
             body = response.body().string();
             return GalleryPageParser.parse(body);
         } catch (Throwable e) {
+            Log.d(TAG, "getGalleryPage: "+e);
             ExceptionUtils.throwIfFatal(e);
             throwException(call, code, headers, body, e);
             throw e;

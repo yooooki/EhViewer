@@ -17,6 +17,8 @@
 package com.hippo.ehviewer.client.parser;
 
 import android.text.TextUtils;
+import android.util.Log;
+
 import com.hippo.ehviewer.client.exception.ParseException;
 import com.hippo.yorozuya.StringUtils;
 import java.util.regex.Matcher;
@@ -50,8 +52,8 @@ public class GalleryPageApiParser {
             if (m.find()) {
                 result.skipHathKey = StringUtils.unescapeXml(StringUtils.trim(m.group(1)));
             }
-            String i7 = jo.getString("i7");
-            m = PATTERN_ORIGIN_IMAGE_URL.matcher(i7);
+            // String i7 = jo.getString("i7");  // fix parse failed
+            m = PATTERN_ORIGIN_IMAGE_URL.matcher(i6); // i7);
             if (m.find()) {
                 result.originImageUrl = StringUtils.unescapeXml(m.group(1)) + "fullimg.php" + StringUtils.unescapeXml(m.group(2));
             }

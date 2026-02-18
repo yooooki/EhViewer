@@ -25,7 +25,8 @@ import java.io.IOException;
 
 public class ImageBitmapHelper implements ValueHelper<ImageBitmap> {
 
-    private static final int MAX_CACHE_SIZE = 512 * 512;
+    // The combined image now has a maximum size of 4000 * 300 (20 images combined together)
+    private static final int MAX_CACHE_SIZE = 4096 * 512; // 512 * 512;
 
     @Nullable
     @Override

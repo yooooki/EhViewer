@@ -17,6 +17,10 @@
 package com.hippo.ehviewer.client.parser;
 
 import android.text.TextUtils;
+import android.util.Log;
+
+import com.hippo.ehviewer.Settings;
+import com.hippo.ehviewer.client.EhUrl;
 import com.hippo.ehviewer.client.exception.ParseException;
 import com.hippo.yorozuya.StringUtils;
 import java.util.regex.Matcher;
@@ -26,7 +30,10 @@ public class GalleryPageParser {
 
     private static final Pattern PATTERN_IMAGE_URL = Pattern.compile("<img[^>]*src=\"([^\"]+)\" style");
     private static final Pattern PATTERN_SKIP_HATH_KEY = Pattern.compile("onclick=\"return nl\\('([^\\)]+)'\\)");
-    private static final Pattern PATTERN_ORIGIN_IMAGE_URL = Pattern.compile("<a href=\"([^\"]+)fullimg.php([^\"]+)\">");
+
+    // 2024-10-26: fix for new eh web ui
+    // private static final Pattern PATTERN_ORIGIN_IMAGE_URL = Pattern.compile("<a href=\"([^\"]+)fullimg.php([^\"]+)\">");
+    private static final Pattern PATTERN_ORIGIN_IMAGE_URL = Pattern.compile("(/fullimg/.+?)\"");
     // TODO Not sure about the size of show keys
     private static final Pattern PATTERN_SHOW_KEY = Pattern.compile("var showkey=\"([0-9a-z]+)\";");
 
@@ -43,7 +50,9 @@ public class GalleryPageParser {
         }
         m = PATTERN_ORIGIN_IMAGE_URL.matcher(body);
         if (m.find()) {
-            result.originImageUrl = StringUtils.unescapeXml(m.group(1)) + "fullimg.php" + StringUtils.unescapeXml(m.group(2));
+            // 2024-10-26: fix for new eh web ui
+            // result.originImageUrl = StringUtils.unescapeXml(m.group(1)) + "fullimg.php" + StringUtils.unescapeXml(m.group(2));
+            result.originImageUrl = EhUrl.getOrigin() + StringUtils.unescapeXml(m.group(1));
         }
         m = PATTERN_SHOW_KEY.matcher(body);
         if (m.find()) {

@@ -5,6 +5,7 @@ if (file('google-services.json').exists()) {
     apply plugin: 'io.fabric'
 }
 
+
 android {
     compileSdkVersion 28
 
@@ -12,14 +13,14 @@ android {
         applicationId "com.hippo.ehviewer"
         minSdkVersion 14
         targetSdkVersion 28
-        versionCode 104
-        versionName "1.7.3"
+        versionCode 201
+        versionName "1.7.3.7"
         vectorDrawables.useSupportLibrary = true
         resConfigs "zh", "zh-rCN", "zh-rHK", "zh-rTW",
                 "es", "ja", "ko", "fr", "de", "th"
         testOptions.unitTests.includeAndroidResources = true
         ndk {
-            abiFilters "armeabi-v7a", "x86"
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
         }
     }
 
@@ -39,6 +40,7 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             buildConfigField 'String', 'FILE_PROVIDER_AUTHORITY', '"com.hippo.ehviewer.fileprovider"'
+            signingConfig signingConfigs.debug
         }
         debug {
             applicationIdSuffix ".debug"
@@ -74,7 +76,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'com.google.firebase:firebase-core:16.0.9'
     implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
-    implementation 'com.getkeepsafe.relinker:relinker:1.3.1'
+    implementation 'com.getkeepsafe.relinker:relinker:1.4.4'
     implementation 'com.github.amlcurran.showcaseview:library:5.4.3'
     implementation 'com.github.seven332.a7zip:extract-lite:d4ddec5793'
     implementation 'com.github.seven332:android-recaptcha:2bbb3459a8'
@@ -84,11 +86,15 @@ dependencies {
     implementation 'com.github.seven332:conaco:0.1.5-eh'
     implementation 'com.github.seven332:drawerlayout:ea2bb388f0'
     implementation 'com.github.seven332:easyrecyclerview:0.1.1'
-    implementation 'com.github.seven332:glgallery:0.1.2'
+    // implementation 'com.github.seven332:glgallery:0.1.2'
+    implementation files('../libs/glgallery-release.aar')
     implementation 'com.github.seven332:glview:0.1.0'
-    implementation 'com.github.seven332:glview-image:0.1.0'
+    // implementation 'com.github.seven332:glview-image:0.1.0'
+    implementation files('../libs/glview-image-release.aar')
     implementation 'com.github.seven332:hotspot:0.1.0'
-    implementation 'com.github.seven332:image:0.1.12'
+    // implementation 'com.github.seven332:image:0.1.12'
+    implementation files('../libs/image-release.aar')
+    // implementation files('../libs/image-debug.aar')
     implementation 'com.github.seven332:refreshlayout:0.1.0'
     implementation 'com.github.seven332:ripple:0.1.2'
     implementation 'com.github.seven332:streampipe:0.1.0'
@@ -107,13 +113,23 @@ dependencies {
     testImplementation 'org.jooq:joor:0.9.6'
 }
 
+
 configurations.all {
     resolutionStrategy {
         force 'com.github.seven332:glgallery:25893283ca'
         force 'com.github.seven332:glview:ba6aee61d7'
         force 'com.github.seven332:glview-image:68d94b0fc2'
-        force 'com.github.seven332:image:09b43c0c68'
+        // force 'com.github.seven332:image:09b43c0c68'
+        // force 'com.github.seven332:image:library-debug.aar'
+        // force file('../libs/library-debug.aar')
+
+//        files('../libs/library-debug.aar').each {
+//            file -> force file
+//        }
+        // force 'com.github.seven332:image:0.1.14'
+        // force 'com.github.seven332:image:0.1.14'
 
         exclude group: 'com.github.seven332', module: 'okhttp'
+
     }
 }

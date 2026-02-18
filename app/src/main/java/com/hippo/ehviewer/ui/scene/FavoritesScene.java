@@ -82,7 +82,7 @@ import com.hippo.scene.Announcer;
 import com.hippo.scene.SceneFragment;
 import com.hippo.util.AppHelper;
 import com.hippo.util.DrawableManager;
-import com.hippo.widget.ContentLayout;
+import com.hippo.widget.DynamicContentLayout;
 import com.hippo.widget.FabLayout;
 import com.hippo.widget.SearchBarMover;
 import com.hippo.yorozuya.AssertUtils;
@@ -245,7 +245,7 @@ public class FavoritesScene extends BaseScene implements
     public View onCreateView2(LayoutInflater inflater,
             @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_favorites, container, false);
-        ContentLayout contentLayout = (ContentLayout) view.findViewById(R.id.content_layout);
+        DynamicContentLayout contentLayout = (DynamicContentLayout) view.findViewById(R.id.dynamic_content_layout);
         MainActivity activity = getActivity2();
         AssertUtils.assertNotNull(activity);
         mDrawerLayout = (EhDrawerLayout) ViewUtils.$$(activity, R.id.draw_view);
@@ -777,7 +777,7 @@ public class FavoritesScene extends BaseScene implements
 
         final int page = mHelper.getPageForTop();
         final int pages = mHelper.getPages();
-        String hint = getString(R.string.go_to_hint, page + 1, pages);
+        String hint = getString(R.string.go_to_hint);
         final EditTextDialogBuilder builder = new EditTextDialogBuilder(context, null, hint);
         builder.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         final AlertDialog dialog = builder.setTitle(R.string.go_to)
@@ -790,19 +790,38 @@ public class FavoritesScene extends BaseScene implements
             }
 
             String text = builder.getText().trim();
-            int goTo;
-            try {
-                goTo = Integer.parseInt(text) - 1;
-            } catch (NumberFormatException e){
-                builder.setError(getString(R.string.error_invalid_number));
-                return;
+            if(text.startsWith(".")){
+                int range;
+                try {
+                    float _range = Float.parseFloat(text);
+                    range = (int)(_range * 100);
+                } catch (NumberFormatException e){
+                    builder.setError(getString(R.string.error_invalid_number));
+                    return;
+                }
+                if (range < 0 || range >100) {
+                    builder.setError(getString(R.string.error_out_of_range));
+                    return;
+                }
+                builder.setError(null);
+                mHelper.goTo2(range);
             }
-            if (goTo < 0 || goTo >= pages) {
-                builder.setError(getString(R.string.error_out_of_range));
-                return;
+            else{
+                int goTo;
+
+                try {
+                    goTo = Integer.parseInt(text) - 1;
+                } catch (NumberFormatException e){
+                    builder.setError(getString(R.string.error_invalid_number));
+                    return;
+                }
+                if (goTo < 0 ) {
+                    builder.setError(getString(R.string.error_out_of_range));
+                    return;
+                }
+                builder.setError(null);
+                mHelper.goTo(goTo);
             }
-            builder.setError(null);
-            mHelper.goTo(goTo);
             AppHelper.hideSoftInput(dialog);
             dialog.dismiss();
         });
@@ -990,7 +1009,7 @@ public class FavoritesScene extends BaseScene implements
             }
 
             updateSearchBar();
-            mHelper.onGetPageData(taskId, result.pages, result.nextPage, result.galleryInfoList);
+            mHelper.onGetPageData2(taskId, 0, 0, result.prevGid, result.nextGid, result.galleryInfoList);
 
             if (mDrawerAdapter != null) {
                 mDrawerAdapter.notifyDataSetChanged();
@@ -1016,9 +1035,9 @@ public class FavoritesScene extends BaseScene implements
             }
 
             if (list.size() == 0) {
-                mHelper.onGetPageData(taskId, 0, 0, Collections.EMPTY_LIST);
+                mHelper.onGetPageData2(taskId, 0, 0, 0, 0, Collections.EMPTY_LIST);
             } else {
-                mHelper.onGetPageData(taskId, 1, 0, list);
+                mHelper.onGetPageData2(taskId, 0, 0, 0, 0, list);
             }
 
             if (TextUtils.isEmpty(keyword)) {

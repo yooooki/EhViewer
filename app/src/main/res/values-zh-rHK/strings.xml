@@ -190,7 +190,7 @@
     <string name="duplicate_quick_search">已存在相同的快速搜索，名稱為“%s”。</string>
     <string name="duplicate_name">已存在相同名稱</string>
 
-    <string name="go_to_hint">第 %1$d 頁，共 %2$d 頁</string>
+    <string name="go_to_hint">输入gid并跳到它之后，或是输入“.”和一个0到100之间的数字来按比例跳页。如“.50”会跳到结果中大约一半的位置。</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 星</string>

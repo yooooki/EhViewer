@@ -16,6 +16,8 @@
 
 package com.hippo.ehviewer.client.parser;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.Settings;
@@ -67,13 +69,16 @@ public class GalleryDetailParser {
     private static final Pattern PATTERN_COMMENT = Pattern.compile("<div class=\"c3\">Posted on ([^<>]+) by: &nbsp; <a[^<>]+>([^<>]+)</a>.+?<div class=\"c6\"[^>]*>(.+?)</div><div class=\"c[78]\"");
     private static final Pattern PATTERN_PAGES = Pattern.compile("<tr><td[^<>]*>Length:</td><td[^<>]*>([\\d,]+) pages</td></tr>");
     private static final Pattern PATTERN_PREVIEW_PAGES = Pattern.compile("<td[^>]+><a[^>]+>([\\d,]+)</a></td><td[^>]+>(?:<a[^>]+>)?&gt;(?:</a>)?</td>");
-    private static final Pattern PATTERN_NORMAL_PREVIEW = Pattern.compile("<div class=\"gdtm\"[^<>]*><div[^<>]*width:(\\d+)[^<>]*height:(\\d+)[^<>]*\\((.+?)\\)[^<>]*-(\\d+)px[^<>]*><a[^<>]*href=\"(.+?)\"[^<>]*><img alt=\"([\\d,]+)\"");
+    //private static final Pattern PATTERN_NORMAL_PREVIEW = Pattern.compile("<div class=\"gdtm\"[^<>]*><div[^<>]*width:(\\d+)[^<>]*height:(\\d+)[^<>]*\\((.+?)\\)[^<>]*-(\\d+)px[^<>]*><a[^<>]*href=\"(.+?)\"[^<>]*><img alt=\"([\\d,]+)\"");
+    //private static final Pattern PATTERN_NORMAL_PREVIEW = Pattern.compile("<a href=\\\"(.+?)\\\"><div><div[^<>]*width:(\\d+)[^<>]*height:(\\d+)[^<>]*url\\((.+?)\\).+?(\\d+).+?(\\d+).+?Page (\\d+)");
+    private static final Pattern PATTERN_NORMAL_PREVIEW = Pattern.compile("<a href=\\\"([^<>]+?)\\\">(?:<div>)?<div[^<>]*Page (\\d+)[^<>]*width:(\\d+)[^<>]*height:(\\d+)[^<>]*url\\((.+?)\\).+?(\\d+).+?(\\d+)");
     private static final Pattern PATTERN_LARGE_PREVIEW = Pattern.compile("<div class=\"gdtl\".+?<a href=\"(.+?)\"><img alt=\"([\\d,]+)\".+?src=\"(.+?)\"");
 
     private static final GalleryTagGroup[] EMPTY_GALLERY_TAG_GROUP_ARRAY = new GalleryTagGroup[0];
     private static final GalleryCommentList EMPTY_GALLERY_COMMENT_ARRAY = new GalleryCommentList(new GalleryComment[0], false);
 
-    private static final DateFormat WEB_COMMENT_DATE_FORMAT = new SimpleDateFormat("dd MMMMM yyyy, HH:mm z", Locale.US);
+    // private static final DateFormat WEB_COMMENT_DATE_FORMAT = new SimpleDateFormat("dd MMMMM yyyy, HH:mm z", Locale.US);
+    private static final DateFormat WEB_COMMENT_DATE_FORMAT = new SimpleDateFormat("dd MMMMM yyyy, HH:mm", Locale.US);  // fix gallery comment
 
     static {
         WEB_COMMENT_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -276,6 +281,9 @@ public class GalleryDetailParser {
             if (a != null) {
                 gd.parent = a.attr("href");
             }
+            else if ( es.get(1).text() == "None" ) {
+                gd.parent = "None";
+            }
         } else if (key.startsWith("Visible")) {
             gd.visible = value;
         } else if (key.startsWith("Language")) {
@@ -441,7 +449,8 @@ public class GalleryDetailParser {
             // time
             Element c3 = JsoupUtils.getElementByClass(element, "c3");
             String temp = c3.ownText();
-            temp = temp.substring("Posted on ".length(), temp.length() - " by:".length());
+            // temp = temp.substring("Posted on ".length(), temp.length() - " by:".length());
+            temp = temp.substring("Posted on ".length(), temp.indexOf(" by:"));  // fix gallery comment
             comment.time = WEB_COMMENT_DATE_FORMAT.parse(temp).getTime();
             // user
             comment.user = c3.child(0).text();
@@ -577,20 +586,23 @@ public class GalleryDetailParser {
         return pages;
     }
 
+    // I believe there are no more large preview set
     public static PreviewSet parsePreviewSet(Document d, String body) throws ParseException {
-        try {
-            return parseLargePreviewSet(d, body);
-        } catch (ParseException e) {
-            return parseNormalPreviewSet(body);
-        }
+//        try {
+//            return parseLargePreviewSet(d, body);
+//        } catch (ParseException e) {
+//            return parseNormalPreviewSet(body);
+//        }
+        return parseNormalPreviewSet(body);
     }
 
     public static PreviewSet parsePreviewSet(String body) throws ParseException {
-        try {
-            return parseLargePreviewSet(body);
-        } catch (ParseException e) {
-            return parseNormalPreviewSet(body);
-        }
+//        try {
+//            return parseLargePreviewSet(body);
+//        } catch (ParseException e) {
+//            return parseNormalPreviewSet(body);
+//        }
+        return parseNormalPreviewSet(body);
     }
 
     /**
@@ -600,22 +612,50 @@ public class GalleryDetailParser {
         try {
             LargePreviewSet largePreviewSet = new LargePreviewSet();
             Element gdt = d.getElementById("gdt");
+
             Elements gdtls = gdt.getElementsByClass("gdtl");
             int n = gdtls.size();
-            if (n <= 0) {
-                throw new ParseException("Can't parse large preview", body);
-            }
-            for (int i = 0; i < n; i++) {
-                Element element = gdtls.get(i).child(0);
-                String pageUrl = element.attr("href");
-                element = element.child(0);
-                String imageUrl = element.attr("src");
-                if (Settings.getFixThumbUrl()) {
-                    imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+            if (n > 0) {
+                for (int i = 0; i < n; i++) {
+                    Element element = gdtls.get(i).child(0);
+                    String pageUrl = element.attr("href");
+                    element = element.child(0);
+                    String imageUrl = element.attr("src");
+                    if (Settings.getFixThumbUrl()) {
+                        imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+                    }
+                    int index = Integer.parseInt(element.attr("alt")) - 1;
+                    largePreviewSet.addItem(index, imageUrl, pageUrl);
                 }
-                int index = Integer.parseInt(element.attr("alt")) - 1;
-                largePreviewSet.addItem(index, imageUrl, pageUrl);
             }
+            else {
+                Log.i("eh", "parseLargePreviewSet: Using newer parser");
+                // 2024-10-25: modify parser to fit newer eh web ui
+                gdtls = gdt.children();
+                n = gdtls.size();
+                if (n == 0) {
+                    throw new ParseException("Parsed empty preview list", body);
+                }
+                for(int i = 0; i < n; ++i){
+                    String pageUrl = gdtls.get(i).attr("href");
+                    Element element = gdtls.get(i).child(0).child(0);
+                    // so, regex
+                    Pattern pattern = Pattern.compile("url\\((.+?)\\)");
+                    Matcher matcher = pattern.matcher(element.attr("style"));
+                    if(!matcher.find() || matcher.groupCount() != 1) {
+                        throw new ParseException("Page has no Image or has multiple image", body);
+                    }
+                    String imageUrl = matcher.group(1);
+                    if (Settings.getFixThumbUrl()) {
+                        imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+                    }
+                    String title = element.attr("title");
+                    int index = Integer.parseInt(title.substring(5, title.indexOf(':'))) - 1;
+                    largePreviewSet.addItem(index, imageUrl, pageUrl);
+                }
+            }
+
+
             return largePreviewSet;
         } catch (Throwable e) {
             ExceptionUtils.throwIfFatal(e);
@@ -628,28 +668,84 @@ public class GalleryDetailParser {
      * Parse large previews with regular expressions
      */
     private static LargePreviewSet parseLargePreviewSet(String body) throws ParseException {
-        Matcher m = PATTERN_LARGE_PREVIEW.matcher(body);
-        LargePreviewSet largePreviewSet = new LargePreviewSet();
+        // 2024-10-27: modified for newer ui of eh
+//        Matcher m = PATTERN_LARGE_PREVIEW.matcher(body);
+//        LargePreviewSet largePreviewSet = new LargePreviewSet();
+//
+//        while (m.find()) {
+//            int index = ParserUtils.parseInt(m.group(2), 0) - 1;
+//            if (index < 0) {
+//                continue;
+//            }
+//            String imageUrl = ParserUtils.trim(m.group(3));
+//            String pageUrl = ParserUtils.trim(m.group(1));
+//            if (Settings.getFixThumbUrl()) {
+//                imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+//            }
+//            largePreviewSet.addItem(index, imageUrl, pageUrl);
+//        }
+//
+//        if (largePreviewSet.size() == 0) {
+//            throw new ParseException("Can't parse large preview", body);
+//        }
+//
+//        return largePreviewSet;
+        Document d = Jsoup.parse(body);
+        try {
+            LargePreviewSet largePreviewSet = new LargePreviewSet();
+            Element gdt = d.getElementById("gdt");
 
-        while (m.find()) {
-            int index = ParserUtils.parseInt(m.group(2), 0) - 1;
-            if (index < 0) {
-                continue;
+            Elements gdtls = gdt.getElementsByClass("gdtl");
+            int n = gdtls.size();
+            if (n > 0) {
+                for (int i = 0; i < n; i++) {
+                    Element element = gdtls.get(i).child(0);
+                    String pageUrl = element.attr("href");
+                    element = element.child(0);
+                    String imageUrl = element.attr("src");
+                    if (Settings.getFixThumbUrl()) {
+                        imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+                    }
+                    int index = Integer.parseInt(element.attr("alt")) - 1;
+                    largePreviewSet.addItem(index, imageUrl, pageUrl);
+                }
             }
-            String imageUrl = ParserUtils.trim(m.group(3));
-            String pageUrl = ParserUtils.trim(m.group(1));
-            if (Settings.getFixThumbUrl()) {
-                imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+            else {
+                Log.i("eh", "parseLargePreviewSet: Using newer parser");
+                // 2024-10-25: modify parser to fit newer eh web ui
+                gdtls = gdt.children();
+                n = gdtls.size();
+                if (n == 0) {
+                    throw new ParseException("Parsed empty preview list", body);
+                }
+                for(int i = 0; i < n; ++i){
+                    String pageUrl = gdtls.get(i).attr("href");
+                    Element element = gdtls.get(i).child(0).child(0);
+                    // so, regex
+                    Pattern pattern = Pattern.compile("url\\((.+?)\\)");
+                    Matcher matcher = pattern.matcher(element.attr("style"));
+                    if(!matcher.find() || matcher.groupCount() != 1) {
+                        throw new ParseException("Page has no Image or has multiple image", body);
+                    }
+                    String imageUrl = matcher.group(1);
+                    if (Settings.getFixThumbUrl()) {
+                        imageUrl = EhUrl.getFixedPreviewThumbUrl(imageUrl);
+                    }
+                    String title = element.attr("title");
+                    int index = Integer.parseInt(title.substring(5, title.indexOf(':'))) - 1;
+                    largePreviewSet.addItem(index, imageUrl, pageUrl);
+                }
             }
-            largePreviewSet.addItem(index, imageUrl, pageUrl);
-        }
 
-        if (largePreviewSet.size() == 0) {
+
+            return largePreviewSet;
+        } catch (Throwable e) {
+            ExceptionUtils.throwIfFatal(e);
+            e.printStackTrace();
             throw new ParseException("Can't parse large preview", body);
         }
-
-        return largePreviewSet;
     }
+
 
     /**
      * Parse normal previews with regular expressions
@@ -658,22 +754,38 @@ public class GalleryDetailParser {
         Matcher m = PATTERN_NORMAL_PREVIEW.matcher(body);
         NormalPreviewSet normalPreviewSet = new NormalPreviewSet();
         while (m.find()) {
-            int position = ParserUtils.parseInt(m.group(6), 0) - 1;
+//            int position = ParserUtils.parseInt(m.group(6), 0) - 1;
+//            if (position < 0) {
+//                continue;
+//            }
+//            String imageUrl = ParserUtils.trim(m.group(3));
+//            int xOffset =  ParserUtils.parseInt(m.group(4), 0);
+//            int yOffset =  0;
+//            int width = ParserUtils.parseInt(m.group(1), 0);
+//            if (width <= 0) {
+//                continue;
+//            }
+//            int height = ParserUtils.parseInt(m.group(2), 0);
+//            if (height <= 0) {
+//                continue;
+//            }
+//            String pageUrl = ParserUtils.trim(m.group(5));
+            int position = ParserUtils.parseInt(m.group(2), 0) - 1;
             if (position < 0) {
                 continue;
             }
-            String imageUrl = ParserUtils.trim(m.group(3));
-            int xOffset =  ParserUtils.parseInt(m.group(4), 0);
-            int yOffset =  0;
-            int width = ParserUtils.parseInt(m.group(1), 0);
+            String imageUrl = ParserUtils.trim(m.group(5));
+            int xOffset =  ParserUtils.parseInt(m.group(6), 0);
+            int yOffset =  ParserUtils.parseInt(m.group(7), 0);
+            int width = ParserUtils.parseInt(m.group(3), 0);
             if (width <= 0) {
                 continue;
             }
-            int height = ParserUtils.parseInt(m.group(2), 0);
+            int height = ParserUtils.parseInt(m.group(4), 0);
             if (height <= 0) {
                 continue;
             }
-            String pageUrl = ParserUtils.trim(m.group(5));
+            String pageUrl = ParserUtils.trim(m.group(1));
             normalPreviewSet.addItem(position, imageUrl, xOffset, yOffset, width, height, pageUrl);
         }
 

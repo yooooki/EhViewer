@@ -35,12 +35,13 @@ public class NormalPreviewSet extends PreviewSet {
     private ArrayList<String> mPageUrlList = new ArrayList<>();
 
     private String getImageKey(String imageUrl) {
-        int index = imageUrl.indexOf('/');
-        if (index >= 0) {
-            return imageUrl.substring(index + 1);
-        } else {
-            return imageUrl;
-        }
+//        int index = imageUrl.indexOf('/');
+//        if (index >= 0) {
+//            return imageUrl.substring(index + 1);
+//        } else {
+//            return imageUrl;
+//        }
+        return imageUrl;
     }
 
     public void addItem(int position, String imageUrl, int xOffset, int yOffset, int width,

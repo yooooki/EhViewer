@@ -1,3 +1,15 @@
+# NOTES
+This repo is maintained for personal use only. It is maintained based on the latest public available release from Hippo (1.7.3). No major features will be added to this repo except for fixes, thus the version number will go on like 1.7.3.x.
+
+By the time EhViewer was developed, mobile phones usually have 512MB or even 256MB RAM, while the official libraries of Android is crab. To develope a smoothy app, one need to be smart. That's why this project depends heavily on Hippo's other projects, including an image libaray based on JNI.
+Nowadays Android phones have more RAM than my laptop, and there are plenty of high-quality libraries, the necessity of making all wheels is almost eliminated. I'll keep maintaining this repo though.
+
+## Build
+Since Eh switchs to Webp years ago, changes must be made on the "image" library, which is also referenced by some other libraries. 
+One must first build the image library, then other libraries, then manually include the built files into gradle to replace the original libraries on maven. This is a little bit frustrating, but such inconvenient for an old project like this is acceptable.
+The modified image library is here: https://github.com/yooooki/Image/tree/ehviewer
+The built aar file in also included in the repo.
+
 # DEPRECATED
 
 [![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/ehviewer)

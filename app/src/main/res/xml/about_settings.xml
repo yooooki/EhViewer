@@ -28,6 +28,11 @@
         android:key="author"
         android:title="@string/settings_about_author"/>
 
+    <Preference
+        android:key="declaration"
+        android:title="@string/settings_about_maintainer"
+        android:summary="@string/settings_about_maintainer_summary"/>
+
     <com.hippo.preference.UrlPreference
       android:key="telegram"
       android:title="@string/settings_about_telegram"

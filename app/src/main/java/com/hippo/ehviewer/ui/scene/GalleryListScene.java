@@ -93,7 +93,7 @@ import com.hippo.scene.SceneFragment;
 import com.hippo.util.AppHelper;
 import com.hippo.util.DrawableManager;
 import com.hippo.view.ViewTransition;
-import com.hippo.widget.ContentLayout;
+import com.hippo.widget.DynamicContentLayout;
 import com.hippo.widget.FabLayout;
 import com.hippo.widget.SearchBarMover;
 import com.hippo.yorozuya.AnimationUtils;
@@ -587,7 +587,7 @@ public final class GalleryListScene extends BaseScene
         mShowActionFab = true;
 
         View mainLayout = ViewUtils.$$(view, R.id.main_layout);
-        ContentLayout contentLayout = (ContentLayout) ViewUtils.$$(mainLayout, R.id.content_layout);
+        DynamicContentLayout contentLayout = (DynamicContentLayout) ViewUtils.$$(mainLayout, R.id.dynamic_content_layout);
         mRecyclerView = contentLayout.getRecyclerView();
         FastScroller fastScroller = contentLayout.getFastScroller();
         RefreshLayout refreshLayout = contentLayout.getRefreshLayout();
@@ -838,7 +838,7 @@ public final class GalleryListScene extends BaseScene
                 }
 
                 mUrlBuilder.set(list.get(position));
-                mUrlBuilder.setPageIndex(0);
+                mUrlBuilder.setNextGid(0);
                 onUpdateUrlBuilder();
                 mHelper.refresh();
                 setState(STATE_NORMAL);
@@ -978,9 +978,9 @@ public final class GalleryListScene extends BaseScene
 
         final int page = mHelper.getPageForTop();
         final int pages = mHelper.getPages();
-        String hint = getString(R.string.go_to_hint, page + 1, pages);
+        String hint = getString(R.string.go_to_hint);
         final EditTextDialogBuilder builder = new EditTextDialogBuilder(context, null, hint);
-        builder.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        builder.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL );
         final AlertDialog dialog = builder.setTitle(R.string.go_to)
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
@@ -993,21 +993,41 @@ public final class GalleryListScene extends BaseScene
                 }
 
                 String text = builder.getText().trim();
-                int goTo;
-                try {
-                    goTo = Integer.parseInt(text) - 1;
-                } catch (NumberFormatException e){
-                    builder.setError(getString(R.string.error_invalid_number));
-                    return;
+                if(text.startsWith(".")){
+                    int range;
+                    try {
+                        float _range = Float.parseFloat(text);
+                        range = (int)(_range * 100);
+                    } catch (NumberFormatException e){
+                        builder.setError(getString(R.string.error_invalid_number));
+                        return;
+                    }
+                    if (range < 0 || range >100) {
+                        builder.setError(getString(R.string.error_out_of_range));
+                        return;
+                    }
+                    builder.setError(null);
+                    mHelper.goTo2(range);
                 }
-                if (goTo < 0 || goTo >= pages) {
-                    builder.setError(getString(R.string.error_out_of_range));
-                    return;
+                else{
+                    int goTo;
+
+                    try {
+                        goTo = Integer.parseInt(text) - 1;
+                    } catch (NumberFormatException e){
+                        builder.setError(getString(R.string.error_invalid_number));
+                        return;
+                    }
+                    if (goTo < 0 ) {
+                        builder.setError(getString(R.string.error_out_of_range));
+                        return;
+                    }
+                    builder.setError(null);
+                    mHelper.goTo(goTo);
                 }
-                builder.setError(null);
-                mHelper.goTo(goTo);
                 AppHelper.hideSoftInput(dialog);
                 dialog.dismiss();
+
             }
         });
     }
@@ -1496,13 +1516,19 @@ public final class GalleryListScene extends BaseScene
     private class GalleryListHelper extends GalleryInfoContentHelper {
 
         @Override
-        protected void getPageData(int taskId, int type, int page) {
+        protected void getPageData(int taskId, int type, int gid) {
             MainActivity activity = getActivity2();
             if (null == activity || null == mClient || null == mUrlBuilder) {
                 return;
             }
-
-            mUrlBuilder.setPageIndex(page);
+            if(DynamicContentLayout.DynamicContentHelper.TYPE_NEXT_PAGE==type || DynamicContentLayout.DynamicContentHelper.TYPE_NEXT_PAGE_KEEP_POS == type)
+                mUrlBuilder.setNextGid(gid);
+            else if(DynamicContentLayout.DynamicContentHelper.TYPE_PRE_PAGE==type || DynamicContentLayout.DynamicContentHelper.TYPE_PRE_PAGE_KEEP_POS == type)
+                mUrlBuilder.setPrevGid(gid);
+            else if(DynamicContentLayout.DynamicContentHelper.TYPE_SOMEWHERE==type)
+                mUrlBuilder.setNextGid(gid);
+            else if(DynamicContentLayout.DynamicContentHelper.TYPE_SOMEWHERE2==type)
+                mUrlBuilder.setRange(gid);
             if (ListUrlBuilder.MODE_IMAGE_SEARCH == mUrlBuilder.getMode()) {
                 EhRequest request = new EhRequest();
                 request.setMethod(EhClient.METHOD_IMAGE_SEARCH);
@@ -1580,7 +1606,7 @@ public final class GalleryListScene extends BaseScene
                     ? R.string.gallery_list_empty_hit_subscription
                     : R.string.gallery_list_empty_hit);
             mHelper.setEmptyString(emptyString);
-            mHelper.onGetPageData(taskId, result.pages, result.nextPage, result.galleryInfoList);
+            mHelper.onGetPageData2(taskId, 0,0, result.prevGid, result.nextGid, result.galleryInfoList);
         }
     }
 

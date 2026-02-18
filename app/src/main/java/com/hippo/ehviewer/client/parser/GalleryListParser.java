@@ -45,7 +45,9 @@ public class GalleryListParser {
     private static final Pattern PATTERN_THUMB_SIZE = Pattern.compile("height:(\\d+)px;width:(\\d+)px");
     private static final Pattern PATTERN_FAVORITE_SLOT = Pattern.compile("background-color:rgba\\((\\d+),(\\d+),(\\d+),");
     private static final Pattern PATTERN_PAGES = Pattern.compile("(\\d+) page");
-    private static final Pattern PATTERN_NEXT_PAGE = Pattern.compile("page=(\\d+)");
+    private static final Pattern PATTERN_NEXT_PAGE = Pattern.compile("next=(\\d+)");
+    private static final Pattern PATTERN_PREV_PAGE = Pattern.compile("prev=(\\d+)");
+    private static final Pattern PATTERN_RESULT_GALLERIES = Pattern.compile(" (\\d+.+?) results");
 
     private static final String[][] FAVORITE_SLOT_RGB = new String[][] {
         new String[] { "0", "0", "0"},
@@ -61,8 +63,11 @@ public class GalleryListParser {
     };
 
     public static class Result {
-        public int pages;
-        public int nextPage;
+        public int galleries;
+        public int startRange;
+        public int endRange;
+        public int nextGid;
+        public int prevGid;
         public boolean noWatchedTags;
         public List<GalleryInfo> galleryInfoList;
     }
@@ -299,33 +304,54 @@ public class GalleryListParser {
         Document d = Jsoup.parse(body);
 
         try {
-            Element ptt = d.getElementsByClass("ptt").first();
-            Elements es = ptt.child(0).child(0).children();
-            result.pages = Integer.parseInt(es.get(es.size() - 2).text().trim());
+//            Element ptt = d.getElementsByClass("ptt").first();
+//            Elements es = ptt.child(0).child(0).children();
+//            result.pages = Integer.parseInt(es.get(es.size() - 2).text().trim());
+//
+//            Element e = es.get(es.size() - 1);
+//            if (e != null) {
+//                e = e.children().first();
+//                if (e != null) {
+//                    String href = e.attr("href");
+//                    Matcher matcher = PATTERN_NEXT_PAGE.matcher(href);
+//                    if (matcher.find()) {
+//                        result.nextPage = NumberUtils.parseIntSafely(matcher.group(1), 0);
+//                    }
+//                }
+//            }
+            Element st = d.getElementsByClass("searchtext").first();
+            Matcher m = PATTERN_RESULT_GALLERIES.matcher(st.text());
+            if(m.find()){
+                result.galleries = Integer.parseInt(m.group(1).replace(",",""));
+            }
 
-            Element e = es.get(es.size() - 1);
-            if (e != null) {
-                e = e.children().first();
-                if (e != null) {
-                    String href = e.attr("href");
-                    Matcher matcher = PATTERN_NEXT_PAGE.matcher(href);
-                    if (matcher.find()) {
-                        result.nextPage = NumberUtils.parseIntSafely(matcher.group(1), 0);
-                    }
+            Element next = d.getElementById("unext");
+            if(next.hasAttr("href")){
+                String href = next.attr("href");
+                Matcher matcher = PATTERN_NEXT_PAGE.matcher(href);
+                if(matcher.find()){
+                    result.nextGid = NumberUtils.parseIntSafely(matcher.group(1),0);
+                }
+            }
+
+            Element prev = d.getElementById("uprev");
+            if(next.hasAttr("href")){
+                String href = prev.attr("href");
+                Matcher matcher = PATTERN_PREV_PAGE.matcher(href);
+                if(matcher.find()){
+                    result.prevGid = NumberUtils.parseIntSafely(matcher.group(1),0);
                 }
             }
         } catch (Throwable e) {
             ExceptionUtils.throwIfFatal(e);
             result.noWatchedTags = body.contains("<p>You do not have any watched tags");
             if (body.contains("No hits found</p>")) {
-                result.pages = 0;
+                result.galleries = 0;
                 //noinspection unchecked
                 result.galleryInfoList = Collections.EMPTY_LIST;
                 return result;
-            } else if (d.getElementsByClass("ptt").isEmpty()) {
-                result.pages = 1;
             } else {
-                result.pages = Integer.MAX_VALUE;
+                result.galleries = Integer.MAX_VALUE;
             }
         }
 

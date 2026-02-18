@@ -19,6 +19,8 @@ package com.hippo.ehviewer.client.data;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
+import android.util.Log;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import com.hippo.ehviewer.client.EhConfig;
@@ -55,7 +57,17 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
     @Mode
     private int mMode = MODE_NORMAL;
 
-    private int mPageIndex = 0;
+    private int mNextGid = 0;  // reformat for current gallery
+    private int mPrevGid = 0;  // reformat for current gallery
+    private int mRange = 0;
+    private enum Direction {
+        forward,
+        backward,
+        jump,
+        none
+    }
+
+    Direction mDirection = Direction.none;
 
     private int mCategory = EhUtils.NONE;
     private String mKeyword = null;
@@ -75,7 +87,10 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
      */
     public void reset() {
         mMode = MODE_NORMAL;
-        mPageIndex = 0;
+        mNextGid = 0;
+        mPrevGid = 0;
+        mRange = 0;
+        mDirection = Direction.none;
         mCategory = EhUtils.NONE;
         mKeyword = null;
         mAdvanceSearch = -1;
@@ -106,12 +121,26 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
         mMode = mode;
     }
 
-    public int getPageIndex() {
-        return mPageIndex;
+    public int getNextGid() {
+        return mNextGid;
+    }
+    public int getPrevGid() {
+        return mPrevGid;
     }
 
-    public void setPageIndex(int pageIndex) {
-        mPageIndex = pageIndex;
+    public void setNextGid(int nextGid) {
+        mNextGid = nextGid;
+        mDirection = Direction.forward;
+    }
+
+    public void setPrevGid(int prevGid) {
+        mPrevGid = prevGid;
+        mDirection = Direction.backward;
+    }
+
+    public void setRange(int range) {
+        mRange = range;
+        mDirection = Direction.jump;
     }
 
     public int getCategory() {
@@ -201,7 +230,10 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
      */
     public void set(ListUrlBuilder lub) {
         mMode = lub.mMode;
-        mPageIndex = lub.mPageIndex;
+        mNextGid = lub.mNextGid;
+        mPrevGid = lub.mPrevGid;
+        mRange = lub.mRange;
+        mDirection = lub.mDirection;
         mCategory = lub.mCategory;
         mKeyword = lub.mKeyword;
         mAdvanceSearch = lub.mAdvanceSearch;
@@ -491,8 +523,16 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
                     }
                 }
                 // Page index
-                if (mPageIndex != 0) {
-                    ub.addQuery("page", mPageIndex);
+                if (mDirection != Direction.none) {
+                    if(mDirection == Direction.forward){
+                        ub.addQuery("next", mNextGid);
+                    }
+                    else if(mDirection == Direction.backward){
+                        ub.addQuery("prev", mPrevGid);
+                    }
+                    else if(mDirection == Direction.jump){
+                        ub.addQuery("range", mRange);
+                    }
                 }
                 // Advance search
                 if (mAdvanceSearch != -1) {
@@ -530,8 +570,16 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
                 } catch (UnsupportedEncodingException e) {
                     // Empty
                 }
-                if (mPageIndex != 0) {
-                    sb.append('/').append(mPageIndex);
+                if (mDirection != Direction.none) {
+                    if(mDirection == Direction.forward){
+                        sb.append("?next=").append(mNextGid);
+                    }
+                    else if(mDirection == Direction.backward){
+                        sb.append("?prev=").append(mPrevGid);
+                    }
+                    else if(mDirection == Direction.jump){
+                        sb.append("?range=").append(mRange);
+                    }
                 }
                 return sb.toString();
             }
@@ -543,8 +591,16 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
                 } catch (UnsupportedEncodingException e) {
                     // Empty
                 }
-                if (mPageIndex != 0) {
-                    sb.append('/').append(mPageIndex);
+                if (mDirection != Direction.none) {
+                    if(mDirection == Direction.forward){
+                        sb.append("?next=").append(mNextGid);
+                    }
+                    else if(mDirection == Direction.backward){
+                        sb.append("?prev=").append(mPrevGid);
+                    }
+                    else if(mDirection == Direction.jump){
+                        sb.append("?range=").append(mRange);
+                    }
                 }
                 return sb.toString();
             }
@@ -563,7 +619,10 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(this.mMode);
-        dest.writeInt(this.mPageIndex);
+        dest.writeInt(this.mNextGid);
+        dest.writeInt(this.mPrevGid);
+        dest.writeInt(this.mRange);
+        dest.writeString(this.mDirection.name());
         dest.writeInt(this.mCategory);
         dest.writeString(this.mKeyword);
         dest.writeInt(this.mAdvanceSearch);
@@ -582,7 +641,10 @@ public class ListUrlBuilder implements Cloneable, Parcelable {
     @SuppressWarnings("WrongConstant")
     protected ListUrlBuilder(Parcel in) {
         this.mMode = in.readInt();
-        this.mPageIndex = in.readInt();
+        this.mNextGid = in.readInt();
+        this.mPrevGid = in.readInt();
+        this.mRange = in.readInt();
+        this.mDirection = Direction.valueOf(in.readString());
         this.mCategory = in.readInt();
         this.mKeyword = in.readString();
         this.mAdvanceSearch = in.readInt();

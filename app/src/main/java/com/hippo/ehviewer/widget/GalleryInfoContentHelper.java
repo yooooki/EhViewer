@@ -22,13 +22,13 @@ import android.os.Parcelable;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.FavouriteStatusRouter;
 import com.hippo.ehviewer.client.data.GalleryInfo;
-import com.hippo.widget.ContentLayout;
+import com.hippo.widget.DynamicContentLayout;
 import com.hippo.yorozuya.IntIdGenerator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class GalleryInfoContentHelper extends ContentLayout.ContentHelper<GalleryInfo> {
+public abstract class GalleryInfoContentHelper extends DynamicContentLayout.DynamicContentHelper<GalleryInfo> {
 
   private static final String KEY_DATA_MAP = "data_map";
 

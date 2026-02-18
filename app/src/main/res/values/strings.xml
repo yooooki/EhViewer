@@ -234,7 +234,7 @@
     <string name="duplicate_quick_search">A duplicate quick search exists. The name is \"%s\".</string>
     <string name="duplicate_name">This name is already in use.</string>
 
-    <string name="go_to_hint">Page %1$d, total %2$d pages</string>
+    <string name="go_to_hint">Input an gid entry, or .range</string>
 
     <!-- search_min_rating -->
     <string name="star_2">2 stars</string>
@@ -617,6 +617,8 @@
     <string name="settings_about_declaration_summary">EhViewer is not affiliated with E-Hentai.org in any way</string>
     <string name="settings_about_author">Author</string>
     <string name="settings_about_author_summary" translatable="false">Hippo &lt;ehviewersu$gmail.com&gt;</string>
+    <string name="settings_about_maintainer">Maintainer</string>
+    <string name="settings_about_maintainer_summary" translatable="false">yooooki &lt;This guy does not use email&gt;</string>
     <string name="settings_about_telegram">Telegram</string>
     <string name="settings_about_latest_release">Latest release</string>
     <string name="settings_about_website">Website</string>

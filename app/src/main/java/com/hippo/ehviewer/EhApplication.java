@@ -363,7 +363,7 @@ public class EhApplication extends RecordingApplication {
         EhApplication application = ((EhApplication) context.getApplicationContext());
         if (null == application.mSpiderInfoCache) {
             application.mSpiderInfoCache = new SimpleDiskCache(
-                    new File(context.getCacheDir(), "spider_info"), 5 * 1024 * 1024); // 5M
+                    new File(context.getCacheDir(), "spider_info"), 40 * 1024 * 1024); // 40M
         }
         return application.mSpiderInfoCache;
     }
